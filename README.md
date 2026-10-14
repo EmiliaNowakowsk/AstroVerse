@@ -1,2 +1,2 @@
 # AstroVerse
-Dzienni obserwacji + katalog planet, gwaizd i innych
+Dziennik obserwacji + katalog planet, gwaizd i innych
