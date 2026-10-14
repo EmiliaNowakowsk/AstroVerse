@@ -1,7 +1,227 @@
-﻿@page "/"
+@page "/"
+@using System.Linq
 
-<PageTitle>Home</PageTitle>
+<PageTitle>AstroVerse — Odkrywaj kosmos</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="dashboard" id="overview">
+    <header class="mobile-header">
+        <a href="/" class="brand">
+            <span class="brand-icon">✦</span>
+            <span>Astro<span class="brand-accent">Verse</span></span>
+        </a>
+    </header>
 
-Welcome to your new app.
+    <section class="welcome-section">
+        <div class="welcome-copy">
+            <div class="eyebrow"><span class="status-dot"></span> TWOJE OKNO NA WSZECHŚWIAT</div>
+            <h1>Odkrywaj to, co<br />jest <span class="gradient-text">poza zasięgiem.</span></h1>
+            <p>Odkrywaj niezwykłe obiekty, planuj obserwacje i zapisuj swoje kosmiczne odkrycia.</p>
+        </div>
+        <div class="welcome-art" aria-label="Ilustracja planety i gwiazd">
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
+            <div class="planet"></div>
+            <span class="star star-one">✦</span>
+            <span class="star star-two">✧</span>
+            <span class="star star-three">✦</span>
+            <span class="star star-four">·</span>
+        </div>
+    </section>
+
+    <section class="search-panel" aria-label="Wyszukiwanie obiektów">
+        <span class="search-icon">⌕</span>
+        <input type="search"
+               placeholder="Szukaj planet, gwiazd, galaktyk..."
+               aria-label="Szukaj obiektów astronomicznych"
+               @bind="SearchText"
+               @bind:event="oninput" />
+        <span class="search-hint">Wyszukaj obiekt</span>
+    </section>
+
+    <section class="stats-grid" aria-label="Podsumowanie">
+        <div class="stat-card">
+            <div class="stat-icon purple-icon">✧</div>
+            <div><span class="stat-label">OBIEKTY W KATALOGU</span><strong>128</strong><small>Do odkrycia</small></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon blue-icon">◉</div>
+            <div><span class="stat-label">ZAPLANOWANE SESJE</span><strong>03</strong><small>W Twoim planie</small></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon pink-icon">☆</div>
+            <div><span class="stat-label">ULUBIONE OBIEKTY</span><strong>@FavoriteCount</strong><small>Twoja kolekcja</small></div>
+        </div>
+    </section>
+
+    <section class="content-section" id="catalog">
+        <div class="section-heading">
+            <div>
+                <div class="eyebrow">POZNAJ WSZECHŚWIAT</div>
+                <h2>Obiekty warte odkrycia</h2>
+                <p>Wybrane cele na Twoją kolejną kosmiczną podróż.</p>
+            </div>
+            <a class="text-link" href="#catalog">Eksploruj katalog <span>↗</span></a>
+        </div>
+
+        <div class="category-row">
+            @foreach (var category in Categories)
+            {
+                <button class="category-chip @(SelectedCategory == category ? "active" : "")"
+                        @onclick="() => SelectedCategory = category">
+                    @category
+                </button>
+            }
+        </div>
+
+        <div class="object-grid">
+            @foreach (var item in FilteredObjects)
+            {
+                <article class="object-card">
+                    <div class="object-art @item.ArtClass">
+                        <span class="object-type">@item.Category</span>
+                        <button class="favorite-button @(item.IsFavorite ? "is-favorite" : "")"
+                                aria-label="@(item.IsFavorite ? "Usuń z ulubionych" : "Dodaj do ulubionych")"
+                                title="@(item.IsFavorite ? "Usuń z ulubionych" : "Dodaj do ulubionych")"
+                                @onclick="() => ToggleFavorite(item)">
+                            @(item.IsFavorite ? "♥" : "♡")
+                        </button>
+                        <div class="celestial-art @item.ArtClass"></div>
+                    </div>
+                    <div class="object-info">
+                        <div class="object-name-row">
+                            <h3>@item.Name</h3>
+                            <span class="object-symbol">@item.Symbol</span>
+                        </div>
+                        <p>@item.Description</p>
+                        <div class="object-footer">
+                            <span>@item.Distance</span>
+                            <a href="#planner" aria-label="Zaplanuj obserwację obiektu @item.Name">Odkryj <span>→</span></a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+
+        @if (!FilteredObjects.Any())
+        {
+            <div class="empty-state">
+                <span>✧</span>
+                <h3>Nie znaleziono obiektów</h3>
+                <p>Spróbuj zmienić wyszukiwaną frazę lub wybrać inną kategorię.</p>
+                <button class="category-chip active" @onclick="ResetFilters">Wyczyść filtry</button>
+            </div>
+        }
+    </section>
+
+    <section class="bottom-grid">
+        <article class="feature-panel planner-panel" id="planner">
+            <div class="panel-topline"><span class="panel-icon">◷</span><span class="panel-tag">TWÓJ PLAN</span></div>
+            <h2>Następna noc<br />pod gwiazdami</h2>
+            <p>Przygotuj się do kolejnej sesji obserwacyjnej. Wybierz cel i zapisz warunki obserwacji.</p>
+            <div class="session-preview">
+                <span class="session-moon">☾</span>
+                <div><strong>Sesja obserwacyjna</strong><small>Dodaj datę i miejsce</small></div>
+                <span class="session-arrow">→</span>
+            </div>
+            <a class="primary-link" href="#journal">Przejdź do planowania <span>↗</span></a>
+        </article>
+
+        <article class="feature-panel journal-panel" id="journal">
+            <div class="panel-topline"><span class="panel-icon journal-icon">✎</span><span class="panel-tag">DZIENNIK</span></div>
+            <h2>Każde spojrzenie<br />ma swoją historię.</h2>
+            <p>Zapisuj swoje obserwacje, warunki pogodowe i wrażenia. Buduj własną kronikę odkryć.</p>
+            <div class="journal-decoration">
+                <span>✦</span><span>✧</span><span>·</span><span>✧</span><span>✦</span>
+            </div>
+            <a class="secondary-link" href="#journal">Otwórz dziennik <span>↗</span></a>
+        </article>
+    </section>
+
+    <footer class="dashboard-footer">
+        <span>✦ AstroVerse</span>
+        <span>Stworzone dla ciekawych Wszechświata.</span>
+        <span>Spójrz w górę. Odkrywaj więcej.</span>
+    </footer>
+</div>
+
+@code {
+    private string SearchText { get; set; } = "";
+    private string SelectedCategory { get; set; } = "Wszystkie";
+
+    private readonly string[] Categories =
+    {
+        "Wszystkie", "Planety", "Gwiazdy", "Galaktyki", "Mgławice"
+    };
+
+    private readonly List<SpaceObject> Objects = new()
+    {
+        new SpaceObject
+        {
+            Name = "Mgławica Oriona",
+            Category = "Mgławice",
+            Description = "Gwiezdny żłobek pełen młodych gwiazd.",
+            Distance = "1 344 lat świetlnych",
+            Symbol = "M42",
+            ArtClass = "orion"
+        },
+        new SpaceObject
+        {
+            Name = "Saturn",
+            Category = "Planety",
+            Description = "Gazowy olbrzym z niezwykłym systemem pierścieni.",
+            Distance = "1,4 mld km od Słońca",
+            Symbol = "VI",
+            ArtClass = "saturn"
+        },
+        new SpaceObject
+        {
+            Name = "Galaktyka Andromedy",
+            Category = "Galaktyki",
+            Description = "Najbliższa duża galaktyka względem Drogi Mlecznej.",
+            Distance = "2,5 mln lat świetlnych",
+            Symbol = "M31",
+            ArtClass = "andromeda"
+        },
+        new SpaceObject
+        {
+            Name = "Betelgeza",
+            Category = "Gwiazdy",
+            Description = "Czerwony nadolbrzym w gwiazdozbiorze Oriona.",
+            Distance = "Około 550 lat świetlnych",
+            Symbol = "α Ori",
+            ArtClass = "betelgeuse"
+        }
+    };
+
+    private IEnumerable<SpaceObject> FilteredObjects =>
+        Objects.Where(item =>
+            (SelectedCategory == "Wszystkie" || item.Category == SelectedCategory) &&
+            (string.IsNullOrWhiteSpace(SearchText) ||
+             item.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+             item.Category.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+             item.Description.Contains(SearchText, StringComparison.OrdinalIgnoreCase)));
+
+    private int FavoriteCount => Objects.Count(item => item.IsFavorite);
+
+    private void ToggleFavorite(SpaceObject item)
+    {
+        item.IsFavorite = !item.IsFavorite;
+    }
+
+    private void ResetFilters()
+    {
+        SearchText = "";
+        SelectedCategory = "Wszystkie";
+    }
+
+    private sealed class SpaceObject
+    {
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Distance { get; set; } = "";
+        public string Symbol { get; set; } = "";
+        public string ArtClass { get; set; } = "";
+        public bool IsFavorite { get; set; }
+    }
+}
